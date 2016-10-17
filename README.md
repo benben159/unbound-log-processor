@@ -20,4 +20,4 @@ formatted file:
 ## To Do List
 
  - fixing shell script using only `awk`
- - 
+ - next release: eliminating shell script, so the Python script can process raw logs directly
