@@ -18,9 +18,10 @@ if __name__ == '__main__':
         print("usage: {} <log-file.csv>".format(sys.argv[0]))
         exit(1)
     requests = []
-    requests_daily = []
+    #requests_daily = [] ## TODO filtering by date. need a format
     mindate, maxdate = 0, 0
     minmon, maxmon = 0, 0
+    minyear, maxyear = 0, 0
     with open(sys.argv[1],'r') as log:
         for l in log:
             l = l.strip().split(';')
@@ -33,9 +34,13 @@ if __name__ == '__main__':
                 minmon = maxmon = reqtime.month
             elif reqtime.month > maxmon:
                 maxmon = reqtime.month
+            if minyear == maxyear == 0:
+                minyear = maxyear = reqtime.year
+            elif reqtime.year > maxyear:
+                maxyear = reqtime.year
             requests.append((reqtime,l[1],l[2]))
 
-    print("requests are dated from {}/{} to {}/{}".format(minmon,mindate,maxmon,maxdate))
+    print("requests are dated from {}/{}/{} to {}/{}/{}".format(minyear,minmon,mindate,maxyear,maxmon,maxdate))
     domain_hits = {}
     client_reqs = {}
     for r in requests:
@@ -61,9 +66,9 @@ if __name__ == '__main__':
     outdir = sys.argv[1] + "-analyzer-out"
     try:
         os.makedirs(outdir)
-        with open(os.path.join(outdir, "domain-hit-count.json"), "w") as d:
+        with open(os.path.join("output", outdir, "domain-hit-count.json"), "w") as d:
             d.write(json.dumps(domain_hits))
-        with open(os.path.join(outdir, "domain-hit-count-per-client.json"), "w") as d:
+        with open(os.path.join("output", outdir, "domain-hit-count-per-client.json"), "w") as d:
             d.write(json.dumps(client_reqs_hits))
     except Exception as e:
         print("an error occurred:", str(e))
