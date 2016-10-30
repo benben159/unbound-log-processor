@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 import sys
 import os
-
+from ipaddress import IPv4Address, IPv4Network
 def domain_name(s):
     split_dom = s[:-1].split('.')
     if (len(split_dom) == 1):
@@ -23,22 +23,27 @@ if __name__ == '__main__':
     minmon, maxmon = 0, 0
     minyear, maxyear = 0, 0
     with open(sys.argv[1],'r') as log:
-        for l in log:
-            l = l.strip().split(';')
-            reqtime = datetime.fromtimestamp(float(l[0]))
-            if mindate == maxdate == 0:
-                mindate = maxdate = reqtime.day
-            elif reqtime.day > maxdate:
-                maxdate = reqtime.day
-            if minmon == maxmon == 0:
-                minmon = maxmon = reqtime.month
-            elif reqtime.month > maxmon:
-                maxmon = reqtime.month
-            if minyear == maxyear == 0:
-                minyear = maxyear = reqtime.year
-            elif reqtime.year > maxyear:
-                maxyear = reqtime.year
-            requests.append((reqtime,l[1],l[2]))
+        for logline in log:
+            logparts = logline.split()
+            ipaddr = IPv4Address(logparts[3])
+            ## IP address filtering default is check client IP address if it is in RFC1918 networks
+            if logparts[2] == 'info:' and (ipaddr in IPv4Network('10.0.0.0/8') or ipaddr in IPv4Network('172.16.0.0/12') or ipaddr in IPv4Network('192.168.0.0/16')) and logparts[5] == 'A':
+                unixts = logparts[0].replace('[','')
+                unixts = unixts.replace(']','')
+                reqtime = datetime.fromtimestamp(float(unixts))
+                if mindate == maxdate == 0:
+                    mindate = maxdate = reqtime.day
+                elif reqtime.day > maxdate:
+                    maxdate = reqtime.day
+                if minmon == maxmon == 0:
+                    minmon = maxmon = reqtime.month
+                elif reqtime.month > maxmon:
+                    maxmon = reqtime.month
+                if minyear == maxyear == 0:
+                    minyear = maxyear = reqtime.year
+                elif reqtime.year > maxyear:
+                    maxyear = reqtime.year
+                requests.append((reqtime,logparts[3], logparts))
 
     print("requests are dated from {}/{}/{} to {}/{}/{}".format(minyear,minmon,mindate,maxyear,maxmon,maxdate))
     domain_hits = {}
